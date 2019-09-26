@@ -87,7 +87,7 @@ class CustomerController {
       // Create new customer
       const newCustomer = await Customer.create({ ...req.body });
       // Remove unnecessary information
-      return res.status(200).json(newCustomer.getSafeDataValues());
+      return res.status(201).json(newCustomer.getSafeDataValues());
     } catch (error) {
       return res.status(400).json({
         error,

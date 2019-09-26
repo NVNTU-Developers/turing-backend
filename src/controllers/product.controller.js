@@ -574,7 +574,7 @@ class ProductController {
         customer_id,
       };
       const review = await Review.create(data);
-      return res.status(200).json(review);
+      return res.status(201).json(review);
     } catch (error) {
       return res.status(400).json({
         error,

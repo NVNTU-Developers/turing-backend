@@ -68,7 +68,7 @@ class ShoppingCartController {
         const updatedItem = await checkItem.update({
           quantity: parseInt(checkItem.quantity, 0) + parseInt(quantity, 0),
         });
-        return res.status(200).json(updatedItem);
+        return res.status(201).json(updatedItem);
       }
       const cartItem = await ShoppingCart.create({
         cart_id,
@@ -76,7 +76,7 @@ class ShoppingCartController {
         attributes,
         quantity: parseInt(quantity, 0),
       });
-      return res.status(200).json(cartItem);
+      return res.status(201).json(cartItem);
     } catch (error) {
       return res.status(400).json({
         error,
@@ -252,7 +252,7 @@ class ShoppingCartController {
         },
         err => {
           if (err) return next(err);
-          return res.status(200).json(newOrder.order_id);
+          return res.status(201).json(newOrder.order_id);
         }
       );
     } catch (error) {
