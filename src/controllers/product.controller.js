@@ -26,6 +26,7 @@ import {
   Department,
   Category,
   Review,
+  Customer,
   AttributeValue,
   Sequelize,
   sequelize,
@@ -548,9 +549,21 @@ class ProductController {
       const product = await Product.findByPk(product_id, {
         include: {
           model: Review,
+          include: {
+            model: Customer,
+            attributes: ['name'],
+          },
         },
       });
-      return res.status(200).json(product.Reviews);
+      const reviews = product.Reviews.map(item => {
+        return {
+          name: item.Customer.name,
+          review: item.review,
+          rating: item.rating,
+          created_on: item.created_on,
+        };
+      })
+      return res.status(200).json(reviews);
     } catch (error) {
       return res.status(400).json({
         error,
