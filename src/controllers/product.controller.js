@@ -20,12 +20,15 @@
  *  NB: Check the BACKEND CHALLENGE TEMPLATE DOCUMENTATION in the readme of this repository to see our recommended
  *  endpoints, request body/param, and response object for each of these method
  */
+import { checkToken } from '../utils';
 import {
   Product,
   Department,
   Category,
   Review,
+  AttributeValue,
   Sequelize,
+  sequelize,
 } from '../database/models';
 
 const { Op } = Sequelize;
@@ -48,14 +51,38 @@ class ProductController {
    */
   static async getAllProducts(req, res, next) {
     const { query } = req;
-    let { page, limit } = query;
+    let { page, limit, where } = query;
     page = parseInt(page, 0) || 1;
     limit = parseInt(limit, 0) || 20;
-
-    const sqlQueryMap = {
+    let sqlQueryMap = {
       limit,
       offset: (page - 1) * limit,
     };
+    if (where) {
+      where = JSON.parse(decodeURIComponent(where));
+      if (where.department_id && !where.category_id) {
+        sqlQueryMap = {
+          ...sqlQueryMap,
+          include: {
+            model: Category,
+            where: {
+              department_id: where.department_id,
+            },
+          },
+        };
+      }
+      if (where.category_id) {
+        sqlQueryMap = {
+          ...sqlQueryMap,
+          include: {
+            model: Category,
+            where: {
+              category_id: where.category_id,
+            },
+          },
+        };
+      }
+    }
     try {
       const products = await Product.findAndCountAll(sqlQueryMap);
       return res.status(200).json({
@@ -71,6 +98,96 @@ class ProductController {
       return res.status(400).json({
         error,
       });
+    }
+  }
+
+  /**
+   * get all products
+   *
+   * @static
+   * @param {object} req express request object
+   * @param {object} res express response object
+   * @param {object} next next middleware
+   * @returns {json} json object with status and product data
+   * @memberof ProductController
+   */
+  static async getSizeColorRange(req, res, next) {
+    const { query } = req;
+    let { where } = query;
+    try {
+      if (where) {
+        where = JSON.parse(decodeURIComponent(where));
+        if (where.department_id && !where.category_id) {
+          const sizes = await sequelize.query(`
+          select distinct(attribute_value.value) from product, product_attribute, attribute_value, attribute, category, product_category, department
+          where department.department_id=${where.department_id}
+          and attribute.name='Size'
+          and product.product_id = product_attribute.product_id
+          and product_attribute.attribute_value_id = attribute_value.attribute_value_id
+          and attribute.attribute_id = attribute_value.attribute_id
+          and product_category.product_id = product.product_id
+          and product_category.category_id = category.category_id
+          and department.department_id = category.department_id;
+          `);
+          const colors = await sequelize.query(`
+          select distinct(attribute_value.value) from product, product_attribute, attribute_value, attribute, category, product_category, department
+          where department.department_id=${where.department_id}
+          and attribute.name='Color'
+          and product.product_id = product_attribute.product_id
+          and product_attribute.attribute_value_id = attribute_value.attribute_value_id
+          and attribute.attribute_id = attribute_value.attribute_id
+          and product_category.product_id = product.product_id
+          and product_category.category_id = category.category_id
+          and department.department_id = category.department_id;
+          `);
+          return res.status(200).json({ sizes: sizes[0], colors: colors[0] });
+        }
+        if (where.department_id && where.category_id) {
+          const sizes = await sequelize.query(`
+          select distinct(attribute_value.value) from product, product_attribute, attribute_value, attribute, category, product_category, department
+          where department.department_id=${where.department_id}
+          and category.category_id=${where.category_id}
+          and attribute.name='Size'
+          and product.product_id = product_attribute.product_id
+          and product_attribute.attribute_value_id = attribute_value.attribute_value_id
+          and attribute.attribute_id = attribute_value.attribute_id
+          and product_category.product_id = product.product_id
+          and product_category.category_id = category.category_id
+          and department.department_id = category.department_id;
+          `);
+          const colors = await sequelize.query(`
+          select distinct(attribute_value.value) from product, product_attribute, attribute_value, attribute, category, product_category, department
+          where department.department_id=${where.department_id}
+          and category.category_id=${where.category_id}
+          and attribute.name='Color'
+          and product.product_id = product_attribute.product_id
+          and product_attribute.attribute_value_id = attribute_value.attribute_value_id
+          and attribute.attribute_id = attribute_value.attribute_id
+          and product_category.product_id = product.product_id
+          and product_category.category_id = category.category_id
+          and department.department_id = category.department_id;
+          `);
+          return res.status(200).json({ sizes: sizes[0], colors: colors[0] });
+        }
+      } else {
+        const sizes = await sequelize.query(`
+          select distinct(attribute_value.value)
+          from product, product_attribute, attribute_value, attribute
+          where product.product_id = product_attribute.product_id
+          and product_attribute.attribute_value_id = attribute_value.attribute_value_id
+          and attribute.attribute_id = attribute_value.attribute_id
+          and attribute.name='Size'`);
+        const colors = await sequelize.query(`
+          select distinct(attribute_value.value)
+          from product, product_attribute, attribute_value, attribute
+          where product.product_id = product_attribute.product_id
+          and product_attribute.attribute_value_id = attribute_value.attribute_value_id
+          and attribute.attribute_id = attribute_value.attribute_id
+          and attribute.name='Color'`);
+        return res.status(200).json({ sizes: sizes[0], colors: colors[0] });
+      }
+    } catch (error) {
+      return next(error);
     }
   }
 
@@ -450,10 +567,11 @@ class ProductController {
   static async createProductReview(req, res, next) {
     const { product_id } = req.params;  // eslint-disable-line
     try {
+      const { customer_id } = await checkToken(req);
       const data = {
         ...req.body,
         product_id,
-        customer_id: 1,
+        customer_id,
       };
       const review = await Review.create(data);
       return res.status(200).json(review);

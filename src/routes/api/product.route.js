@@ -5,6 +5,7 @@ import ProductController from '../../controllers/product.controller';
 
 const router = Router();
 router.get('/products', ProductController.getAllProducts);
+router.get('/products/getSizeColorRange', ProductController.getSizeColorRange);
 router.get('/products/search', ProductController.searchProducts);
 router.get('/products/:product_id', ProductController.getSingleProduct);
 router.get('/products/:product_id/locations', ProductController.getProductLocations);
