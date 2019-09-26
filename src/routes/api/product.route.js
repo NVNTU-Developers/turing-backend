@@ -18,7 +18,7 @@ router.get('/department/andCategories', ProductController.getDepartmentAndCatego
 router.get('/categories/inProduct/:product_id', ProductController.getProductCategory);
 router.get('/categories/:category_id', ProductController.getSingleCategory);
 router.get('/categories/inDepartment/:department_id', ProductController.getDepartmentCategories);
-router.get('/reviews/inProduct/:product_id', ProductController.getProductReviews);
+router.get('/products/:product_id/reviews', ProductController.getProductReviews);
 router.post('/products/:product_id/reviews', ProductController.createProductReview);
 
 export default router;
