@@ -226,10 +226,9 @@ class ShoppingCartController {
         where: { cart_id },
         include: { model: Product },
       });
-      let total_amount = 0;
-      cartItems.forEach(item => {
-        total_amount += parseFloat(item.Product.discounted_price * item.quantity).toFixed(2);
-      });
+      const total_amount = cartItems.reduce((preVal, el) => {
+        return preVal + (parseFloat(el.Product.discounted_price) > 0 ? parseFloat(el.Product.discounted_price) * el.quantity : parseFloat(el.Product.price) * el.quantity);
+      }, 0);
       const newOrder = await Order.create({
         ...req.body,
         total_amount,
@@ -359,7 +358,7 @@ class ShoppingCartController {
           },
           method: 'post',
           body: Object.keys(chargeBody)
-            .map(key => `${key  }=${  chargeBody[key]}`)
+            .map(key => `${key}=${chargeBody[key]}`)
             .join('&'),
         })
           .then(res2 =>

@@ -14,7 +14,7 @@
  *  endpoints, request body/param, and response object for each of these method
  */
 import { FB } from 'fb';
-import { Customer } from '../database/models';
+import { Customer, Order, OrderDetail } from '../database/models';
 import { generateToken, checkToken } from '../utils';
 /**
  *
@@ -202,6 +202,37 @@ class CustomerController {
       const { customer_id } = await checkToken(req);
       const objCustomer = await Customer.findByPk(customer_id);
       return res.status(200).json(objCustomer.getSafeDataValues());
+    } catch (error) {
+      return res.status(400).json({
+        error,
+      });
+    }
+  }
+
+   /**
+   * Check customer buy product or not
+   *
+   * @static
+   * @param {object} req express request object
+   * @param {object} res express response object
+   * @param {object} next next middleware
+   * @returns {json} json object with status customer profile data
+   * @memberof CustomerController
+   */
+  static async checkCustomerByProduct(req, res, next) {
+    // fix the bugs in this code
+    const { product_id } = req.params;
+    try {
+      const { customer_id } = await checkToken(req);
+      const orders = await Order.count({
+        where: { customer_id },
+        include: {
+          model: OrderDetail,
+          as: 'orderItems',
+          where: { product_id },
+        },
+      });
+      return res.status(200).json(orders);
     } catch (error) {
       return res.status(400).json({
         error,

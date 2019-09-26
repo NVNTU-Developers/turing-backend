@@ -8,6 +8,7 @@ router.post('/customers/login', CustomerController.login);
 router.post('/customers/loginFB', CustomerController.loginFacebook);
 router.post('/customers', CustomerController.create);
 router.get('/customers', CustomerController.getCustomerProfile);
+router.get('/customers/checkProducts/:product_id', CustomerController.checkCustomerByProduct);
 router.put('/customer', CustomerController.updateCustomerProfile);
 router.put('/customer/address', CustomerController.updateCustomerAddress);
 router.put('/customer/creditCard', CustomerController.updateCreditCard);

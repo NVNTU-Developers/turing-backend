@@ -52,7 +52,7 @@ class ProductController {
    */
   static async getAllProducts(req, res, next) {
     const { query } = req;
-    let { page, limit, where } = query;
+    let { page, limit, where, conditions } = query;
     page = parseInt(page, 0) || 1;
     limit = parseInt(limit, 0) || 20;
     let sqlQueryMap = {
@@ -84,7 +84,32 @@ class ProductController {
         };
       }
     }
+    if (conditions) {
+      conditions = JSON.parse(decodeURIComponent(conditions));
+      if (conditions.discounted_price) {
+        sqlQueryMap = {
+          ...sqlQueryMap,
+          where: {
+            discounted_price: {
+              [Op.between]: conditions.discounted_price.between,
+            },
+          },
+        };
+      }
+      if (conditions.name) {
+        sqlQueryMap = {
+          ...sqlQueryMap,
+          where: {
+            ...sqlQueryMap.where,
+            name: {
+              [Op.like]: `%${conditions.name}%`.split('"').join(''),
+            },
+          },
+        };
+      }
+    }
     try {
+      console.log('sqlQueryMap', sqlQueryMap);
       const products = await Product.findAndCountAll(sqlQueryMap);
       return res.status(200).json({
         paginationMeta: {
