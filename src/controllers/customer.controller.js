@@ -123,7 +123,8 @@ class CustomerController {
         where: { email },
       });
       if (!customer) return next('Could not find your email in our system');
-      if (!customer.validatePassword(password)) return next('Your email or password is incorrect');
+      const checkPass = await customer.validatePassword(password);
+      if (!checkPass) return next('Your email or password is incorrect');
       const userInfo = customer.getSafeDataValues();
       generateToken(userInfo.customer_id, (accessToken) => {
         return res.status(200).json({
